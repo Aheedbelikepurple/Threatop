@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Supabase PostgreSQL Connection
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Indicator of Compromise (IOC)
+model Indicator {
+  id          String   @id @default(uuid())
+  value       String   @unique
+  type        String   // IP, Domain, Hash, URL
+  tlp         String   // Red, Amber, Green, White
+  severity    String   // Critical, High, Medium, Low
+  source      String   // AlienVault, VirusTotal, OSINT
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  campaignId  String?
+  campaign    ThreatCampaign? @relation(fields: [campaignId], references: [id])
+}
+
+// Threat Campaigns
+model ThreatCampaign {
+  id          String   @id @default(uuid())
+  name        String
+  actor       String?
+  description String
+  severity    String
+  tags        String[] // Array of targeted sectors or traits (e.g., ['Finance', 'Ransomware'])
+  mitreTips   String[] // Attached MITRE techniques
+  firstSeen   DateTime @default(now())
+  lastSeen    DateTime @default(now())
+  
+  indicators  Indicator[]
+}
+
+// Threat Actors Profiles
+model ThreatActor {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  origin      String
+  motivation  String
+  aliases     String[]
+  targets     String[]
+  description String
+}
+
+// Common Vulnerabilities and Exposures (CVEs)
+model Cve {
+  id          String   @id @default(uuid())
+  cveId       String   @unique
+  score       Float
+  status      String   // e.g. "Exploited in the wild"
+  vendor      String
+  patch       String
+  description String
+  publishedAt DateTime @default(now())
+}
+
+// Threat Intelligence Data Feeds Sync Status
+model DataFeed {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  status      String   // Active, Inactive
+  indicators  Int      @default(0)
+  lastSync    DateTime @default(now())
+}
